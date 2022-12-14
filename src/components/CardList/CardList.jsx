@@ -11,8 +11,9 @@ export default class CardList extends Component {
     films: [],
     loading: false,
     query: null,
-    pages: 1,
+    pages: 0,
     selected_page: 1,
+    online: true,
   };
 
   movies = new Movies('33d7e35c3bfff3e6599b6fecc8aa070e');
@@ -50,32 +51,38 @@ export default class CardList extends Component {
 
   searchFilms(query, page) {
     this.movies.getGenres().then((allGenres) => {
-      this.movies.searchMovie(query, page).then((films) => {
-        if (films.results.length === 0) {
-          this.setState({
-            films: [],
-            loading: false,
-          });
-        } else
-          this.setState({
-            films: films.results.map((res) => {
-              let genres = res.genre_ids.map((id) => {
-                return allGenres['genres'].find((g) => g.id === id);
-              });
-              return {
-                poster: this.getImage(this.movies.imgLink, res.poster_path),
-                name: res.title,
-                date: res.release_date,
-                rate: res.vote_average.toFixed(1),
-                description: res.overview,
-                tags: genres,
-                key: res.id,
-              };
-            }),
-            loading: false,
-            pages: films.total_pages,
-          });
-      });
+      this.movies
+        .searchMovie(query, page)
+        .then((films) => {
+          if (films.results.length === 0) {
+            this.setState({
+              films: [],
+              loading: false,
+            });
+          } else
+            this.setState({
+              films: films.results.map((res) => {
+                let genres = res.genre_ids.map((id) => {
+                  return allGenres['genres'].find((g) => g.id === id);
+                });
+                return {
+                  poster: this.getImage(this.movies.imgLink, res.poster_path),
+                  name: res.title,
+                  date: res.release_date,
+                  rate: res.vote_average.toFixed(1),
+                  description: res.overview,
+                  tags: genres,
+                  key: res.id,
+                };
+              }),
+              loading: false,
+              pages: films.total_pages,
+              online: true,
+            });
+        })
+        .catch((err) => {
+          this.setState({ online: false, loading: false });
+        });
     });
   }
 
@@ -107,18 +114,22 @@ export default class CardList extends Component {
             this.state.films.map((el) => {
               return <FilmCard {...el}></FilmCard>;
             })
-          ) : this.state.query ? (
+          ) : this.state.query && this.state.online ? (
             <Alert message="Movies not found" type="error" className="alert" showIcon />
           ) : null}
         </div>
-        <Pagination
-          current={this.state.selected_page}
-          showSizeChanger={false}
-          defaultPageSize={1}
-          total={this.state.pages}
-          onChange={this.changePage}
-          className={'pagination'}
-        ></Pagination>
+        {this.state.pages && this.state.query && this.state.online ? (
+          <Pagination
+            current={this.state.selected_page}
+            showSizeChanger={false}
+            defaultPageSize={1}
+            total={this.state.pages}
+            onChange={this.changePage}
+            className={'pagination'}
+          ></Pagination>
+        ) : null}
+
+        {!this.state.online ? <Alert message="Network Error" type="error" className="alert" showIcon></Alert> : null}
       </div>
     );
   }
