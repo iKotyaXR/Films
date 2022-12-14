@@ -4,6 +4,13 @@ import './Searchbar.scss';
 
 export default class Searchbar extends Component {
   render() {
-    return <Input type="search" className="searchbar" placeholder="Type to search..." />;
+    return (
+      <Input
+        type="search"
+        className="searchbar"
+        onChange={this.props.emitter.emit.bind(this.props.emitter, 'search')}
+        placeholder="Type to search..."
+      />
+    );
   }
 }
