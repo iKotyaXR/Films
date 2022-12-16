@@ -19,10 +19,12 @@ export default class Header extends Component {
   state = {
     active: 'search',
   };
-
   render() {
     const setActive = (e) => {
-      this.setState({ active: e.key });
+      this.setState(() => {
+        this.props.emitter.emit('changetab', e.key);
+        return { active: e.key };
+      });
     };
 
     return (

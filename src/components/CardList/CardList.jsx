@@ -6,6 +6,7 @@ import Movies from '../../services/Movies';
 import Emitter from '../../services/Emmiter';
 import { Alert, Pagination, Spin } from 'antd';
 import { debounce } from 'lodash';
+
 export default class CardList extends Component {
   state = {
     films: [],
@@ -14,6 +15,7 @@ export default class CardList extends Component {
     pages: 0,
     selected_page: 1,
     online: true,
+    rated: false,
   };
 
   movies = new Movies('33d7e35c3bfff3e6599b6fecc8aa070e');
@@ -40,7 +42,27 @@ export default class CardList extends Component {
     this.searchdeb(e.target.value);
   };
   componentDidMount() {
+    this.movies.getGenres().catch(() => {
+      this.setState({ online: false, loading: false });
+    });
     Emitter.on('search', this.search);
+    Emitter.on('changetab', async (e) => {
+      if (e === 'rated' && !this.state.rated) {
+        let userFilms = JSON.parse(localStorage.getItem('ratedFilms')) || [];
+        this.setState({ films: [], rated: true, query: null, pages: 0, loading: true });
+        userFilms.forEach(({ id }) => {
+          this.getFilm(id).then((res) => {
+            this.setState(({ films }) => {
+              let filmsCopy = JSON.parse(JSON.stringify(films));
+              filmsCopy.push(res);
+              return { films: filmsCopy, loading: false };
+            });
+          });
+        });
+      } else if (e === 'search' && this.state.rated) {
+        this.setState({ films: [], rated: false });
+      }
+    });
   }
   componentWillUnmount() {
     Emitter.off('search', this.search);
@@ -50,47 +72,52 @@ export default class CardList extends Component {
   }
 
   searchFilms(query, page) {
-    this.movies.getGenres().then((allGenres) => {
-      this.movies
-        .searchMovie(query, page)
-        .then((films) => {
-          if (films.results.length === 0) {
-            this.setState({
-              films: [],
-              loading: false,
-            });
-          } else
-            this.setState({
-              films: films.results.map((res) => {
-                let genres = res.genre_ids.map((id) => {
-                  return allGenres['genres'].find((g) => g.id === id);
-                });
-                return {
-                  poster: this.getImage(this.movies.imgLink, res.poster_path),
-                  name: res.title,
-                  date: res.release_date,
-                  rate: res.vote_average.toFixed(1),
-                  description: res.overview,
-                  tags: genres,
-                  key: res.id,
-                };
-              }),
-              loading: false,
-              pages: films.total_pages,
-              online: true,
-            });
-        })
-        .catch((err) => {
-          this.setState({ online: false, loading: false });
-        });
-    });
+    this.movies
+      .getGenres()
+      .then((allGenres) => {
+        this.movies
+          .searchMovie(query, page)
+          .then((films) => {
+            if (films.results.length === 0) {
+              this.setState({
+                films: [],
+                loading: false,
+              });
+            } else
+              this.setState({
+                films: films.results.map((res) => {
+                  let genres = res.genre_ids.map((id) => {
+                    return allGenres['genres'].find((g) => g.id === id);
+                  });
+                  return {
+                    poster: this.getImage(this.movies.imgLink, res.poster_path),
+                    name: res.title,
+                    date: res.release_date,
+                    rate: res.vote_average.toFixed(1),
+                    description: res.overview,
+                    tags: genres,
+                    key: res.id,
+                    id: res.id,
+                  };
+                }),
+                loading: false,
+                pages: films.total_pages,
+                online: true,
+              });
+          })
+          .catch(() => {
+            this.setState({ online: false, loading: false });
+          });
+      })
+      .catch(() => {
+        this.setState({ online: false, loading: false });
+      });
   }
 
-  getFilm(id) {
-    this.movies.getMovie(id).then((res) => {
-      this.setState(({ films }) => {
-        let newFilms = JSON.parse(JSON.stringify(films));
-        newFilms.push({
+  async getFilm(id) {
+    return new Promise((rs, rj) => {
+      this.movies.getMovie(id).then((res) => {
+        rs({
           poster: this.movies.imgLink + res.poster_path,
           name: res.title,
           date: res.release_date,
@@ -98,8 +125,8 @@ export default class CardList extends Component {
           description: res.overview,
           tags: res.genres,
           key: res.id,
+          id: res.id,
         });
-        return { films: newFilms };
       });
     });
   }

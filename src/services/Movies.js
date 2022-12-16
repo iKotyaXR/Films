@@ -4,10 +4,8 @@ export default class Movies {
 
   constructor(key) {
     this.apiKey = key;
-    this.getGenres();
   }
   async getMovie(id) {
-    fetch('');
     let movie = await fetch(`${this._apiLink}/movie/${id}?api_key=${this.apiKey}`);
     if (!movie.ok) throw new Error('Error Movie');
     let data = await movie.json();
