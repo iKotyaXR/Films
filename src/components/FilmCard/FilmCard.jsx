@@ -1,4 +1,4 @@
-import React, { Component, createRef } from 'react';
+import React, { Component } from 'react';
 import { Card, Rate, Spin, Tag } from 'antd';
 import { format } from 'date-fns';
 

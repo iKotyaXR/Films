@@ -1,11 +1,11 @@
 import { Component } from 'react';
+import { Alert, Pagination, Spin } from 'antd';
+import { debounce } from 'lodash';
 
 import './CardList.scss';
 import FilmCard from '../FilmCard/FilmCard';
 import Movies from '../../services/Movies';
 import Emitter from '../../services/Emmiter';
-import { Alert, Pagination, Spin } from 'antd';
-import { debounce } from 'lodash';
 
 export default class CardList extends Component {
   state = {
@@ -115,7 +115,7 @@ export default class CardList extends Component {
   }
 
   async getFilm(id) {
-    return new Promise((rs, rj) => {
+    return new Promise((rs) => {
       this.movies.getMovie(id).then((res) => {
         rs({
           poster: this.movies.imgLink + res.poster_path,
@@ -139,7 +139,18 @@ export default class CardList extends Component {
             <Spin className="spin" />
           ) : this.state.films.length ? (
             this.state.films.map((el) => {
-              return <FilmCard {...el}></FilmCard>;
+              return (
+                <FilmCard
+                  key={el.key}
+                  id={el.id}
+                  poster={el.poster}
+                  name={el.name}
+                  date={el.date}
+                  rate={el.rate}
+                  description={el.description}
+                  tags={el.tags}
+                ></FilmCard>
+              );
             })
           ) : this.state.query && this.state.online ? (
             <Alert message="Movies not found" type="error" className="alert" showIcon />
