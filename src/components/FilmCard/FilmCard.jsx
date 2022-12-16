@@ -6,7 +6,7 @@ import './FilmCard.scss';
 import ColorRate from '../ColorRate';
 
 const cardBody = {
-  padding: 0,
+padding: 0,
   display: 'flex',
   flexDirection: 'row',
 };
