@@ -40,7 +40,7 @@ export default class FilmCard extends Component {
 
   render() {
     let { rate, name, date, description, poster, tags, id } = this.props;
-    let film = JSON.parse(localStorage.getItem('ratedFilms')).find((e) => e.id === id);
+    let film = (JSON.parse(localStorage.getItem('ratedFilms')) || []).find((e) => e.id === id);
     let image = new Image();
     image.src = poster;
     image.onload = () => {

@@ -50,6 +50,7 @@ export default class CardList extends Component {
       if (e === 'rated' && !this.state.rated) {
         let userFilms = JSON.parse(localStorage.getItem('ratedFilms')) || [];
         this.setState({ films: [], rated: true, query: null, pages: 0, loading: true });
+        if (userFilms.length == 0) this.setState({ films: [], loading: false });
         userFilms.forEach(({ id }) => {
           this.getFilm(id).then((res) => {
             this.setState(({ films }) => {
