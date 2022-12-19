@@ -46,24 +46,28 @@ export default class CardList extends Component {
       this.setState({ online: false, loading: false });
     });
     Emitter.on('search', this.search);
-    Emitter.on('changetab', async (e) => {
-      if (e === 'rated' && !this.state.rated) {
-        let userFilms = JSON.parse(localStorage.getItem('ratedFilms')) || [];
-        this.setState({ films: [], rated: true, query: null, pages: 0, loading: true });
-        if (userFilms.length == 0) this.setState({ films: [], loading: false });
-        userFilms.forEach(({ id }) => {
-          this.getFilm(id).then((res) => {
-            this.setState(({ films }) => {
-              let filmsCopy = JSON.parse(JSON.stringify(films));
-              filmsCopy.push(res);
-              return { films: filmsCopy, loading: false };
-            });
+  }
+  componentDidUpdate() {
+    let { active } = this.props;
+
+    if (active === this.state.active) return;
+
+    if (active === 'rated' && !this.state.rated) {
+      let userFilms = JSON.parse(localStorage.getItem('ratedFilms')) || [];
+      this.setState({ films: [], rated: true, query: null, pages: 0, loading: true, active });
+      if (userFilms.length == 0) this.setState({ films: [], loading: false, active });
+      userFilms.forEach(({ id }) => {
+        this.getFilm(id).then((res) => {
+          this.setState(({ films }) => {
+            let filmsCopy = JSON.parse(JSON.stringify(films));
+            filmsCopy.push(res);
+            return { films: filmsCopy, loading: false, active };
           });
         });
-      } else if (e === 'search' && this.state.rated) {
-        this.setState({ films: [], rated: false });
-      }
-    });
+      });
+    } else if (active === 'search' && this.state.rated) {
+      this.setState({ films: [], rated: false, active });
+    }
   }
   componentWillUnmount() {
     Emitter.off('search', this.search);
@@ -72,47 +76,42 @@ export default class CardList extends Component {
     return path ? link + path : 'https://critics.io/img/movies/poster-placeholder.png';
   }
 
-  searchFilms(query, page) {
-    this.movies
-      .getGenres()
-      .then((allGenres) => {
-        this.movies
-          .searchMovie(query, page)
-          .then((films) => {
-            if (films.results.length === 0) {
-              this.setState({
-                films: [],
-                loading: false,
-              });
-            } else
-              this.setState({
-                films: films.results.map((res) => {
-                  let genres = res.genre_ids.map((id) => {
-                    return allGenres['genres'].find((g) => g.id === id);
-                  });
-                  return {
-                    poster: this.getImage(this.movies.imgLink, res.poster_path),
-                    name: res.title,
-                    date: res.release_date,
-                    rate: res.vote_average.toFixed(1),
-                    description: res.overview,
-                    tags: genres,
-                    key: res.id,
-                    id: res.id,
-                  };
-                }),
-                loading: false,
-                pages: films.total_pages,
-                online: true,
-              });
-          })
-          .catch(() => {
-            this.setState({ online: false, loading: false });
-          });
-      })
-      .catch(() => {
-        this.setState({ online: false, loading: false });
-      });
+  async searchFilms(query, page) {
+    try {
+      let allGenres = await this.movies.getGenres();
+      let films = await this.movies.searchMovie(query, page);
+      if (films.results.length === 0) {
+        this.setState({
+          films: [],
+          loading: false,
+        });
+      } else {
+        this.setState({
+          films: films.results.map((res) => {
+            let genres = res.genre_ids.map((id) => {
+              return allGenres['genres'].find((g) => g.id === id);
+            });
+
+            return {
+              poster: this.getImage(this.movies.imgLink, res.poster_path),
+              name: res.title,
+              date: res.release_date,
+              rate: res.vote_average.toFixed(1),
+              description: res.overview,
+              tags: genres,
+              key: res.id,
+              id: res.id,
+            };
+          }),
+
+          loading: false,
+          pages: films.total_pages,
+          online: true,
+        });
+      }
+    } catch (err) {
+      this.setState({ online: false, loading: false });
+    }
   }
 
   async getFilm(id) {

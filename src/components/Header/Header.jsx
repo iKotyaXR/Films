@@ -1,5 +1,5 @@
-import { Component } from 'react';
-import { Menu } from 'antd';
+import React, { Component } from 'react';
+import { Tabs } from 'antd';
 import './Header.scss';
 
 const items = [
@@ -16,27 +16,16 @@ const items = [
 ];
 
 export default class Header extends Component {
-  state = {
-    active: 'search',
-  };
   render() {
-    const setActive = (e) => {
-      this.setState(() => {
-        this.props.emitter.emit('changetab', e.key);
-        return { active: e.key };
-      });
-    };
-
     return (
       <header className="header">
-        <Menu
-          onClick={setActive}
+        <Tabs
+          onChange={this.props.setActive}
           className="menu"
           items={items}
           mode="horizontal"
-          selectable
-          selectedKeys={this.state.active}
-        ></Menu>
+          selectedkeys={this.props.active}
+        ></Tabs>
       </header>
     );
   }
