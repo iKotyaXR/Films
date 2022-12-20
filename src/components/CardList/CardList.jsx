@@ -5,7 +5,6 @@ import { debounce } from 'lodash';
 import './CardList.scss';
 import FilmCard from '../FilmCard/FilmCard';
 import Movies from '../../services/Movies';
-import Emitter from '../../services/Emmiter';
 
 export default class CardList extends Component {
   state = {
@@ -37,19 +36,18 @@ export default class CardList extends Component {
   changePage = (page) => {
     this.getPageFilms(this.state.query, page);
   };
-  search = (e) => {
-    if (!e.target.value) return this.setState({ films: [], query: e.target.value });
-    this.searchdeb(e.target.value);
-  };
   componentDidMount() {
     this.movies.getGenres().catch(() => {
       this.setState({ online: false, loading: false });
     });
-    Emitter.on('search', this.search);
   }
   componentDidUpdate() {
-    let { active } = this.props;
+    let { active, searchQuery } = this.props;
 
+    if (searchQuery != this.state.query) {
+      if (!searchQuery) return this.setState({ films: [], query: '' });
+      this.searchdeb(searchQuery);
+    }
     if (active === this.state.active) return;
 
     if (active === 'rated' && !this.state.rated) {
@@ -68,9 +66,6 @@ export default class CardList extends Component {
     } else if (active === 'search' && this.state.rated) {
       this.setState({ films: [], rated: false, active });
     }
-  }
-  componentWillUnmount() {
-    Emitter.off('search', this.search);
   }
   getImage(link, path) {
     return path ? link + path : 'https://critics.io/img/movies/poster-placeholder.png';
